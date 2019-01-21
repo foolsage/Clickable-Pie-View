@@ -14,15 +14,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClickablePieView extends View implements View.OnTouchListener {
+    private int blankColor = Color.WHITE;
     private int mTextcolor = Color.BLACK;
     private int mTextColorClicked = Color.WHITE;
+    private int defaultTextSize = 40;
+    private String mDefaultColor = "#FFE2E2E2";
 
-    private String mDefaultColor = "#f3f3f3";
     private int[] mColors = new int[]{
             Color.RED,
             Color.BLUE,
-            Color.YELLOW,
-            Color.GREEN,
             Color.BLACK
     };
 
@@ -49,7 +49,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     private Paint mPiePaint, mTextPaint;
     private float mStartAngle = 0f;
     private int mWidth, mHeight;
-    private float r;
+    private float r, r2;
     private OnSectorClickListener onSectorClickListener;
 
     public void setOnSectorClickListener(OnSectorClickListener onSectorClickListener) {
@@ -78,28 +78,12 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         mTextPaint = new Paint();
         mTextPaint.setAntiAlias(true);//抗鋸齒
         mTextPaint.setDither(true);//防抖動
-        mTextPaint.setColor(mTextcolor);
+        mTextPaint.setTextAlign(Paint.Align.CENTER);
+        mTextPaint.setTextSize(defaultTextSize);
+        mTextPaint.setStyle(Paint.Style.FILL);
         setOnTouchListener(this);
         iniData();
     }
-
-//    private float blankAngle;
-//    private void iniData(){
-//        if(datas.size()>0){
-//            datas.clear();
-//        }
-//        float angle = 360 / mTexts.length;
-//        blankAngle = (360 - (angle * mTexts.length)) / mTexts.length;//空隙的角度
-//        if(blankAngle<=0){
-//            blankAngle = 1;
-//            angle-=blankAngle;
-//        }
-//        float currentStartAngle = mStartAngle;
-//        for(int i=0;i<mTexts.length;i++){
-//            datas.add(new Data(mColors[i%mColors.length], mTexts[i], currentStartAngle, angle));
-//            currentStartAngle += angle + blankAngle;
-//        }
-//    }
 
     private void iniData(){
         float angle = 360 / mTexts.length;
@@ -115,7 +99,6 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-//        setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
     }
 
     @Override
@@ -124,14 +107,14 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         mWidth = w;
         mHeight = h;
         r = (float) (Math.min(mWidth, mHeight) / 2);
+        r2 = (float) (r * 0.05);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        canvas.translate(mWidth/2, mHeight/2);//原點移動到中心點
-        float r2 = (float) (r * 0.05);
+        canvas.translate(mWidth/2, mHeight/2);//原點移動到canvas的中心點
         RectF rectF = new RectF();
         RectF rectF2 = new RectF();
         rectF.set(-r, -r, r, r);
@@ -146,34 +129,77 @@ public class ClickablePieView extends View implements View.OnTouchListener {
             }
             //繪製扇形
             canvas.drawArc(rectF, datas.get(i).getStartAngle(), datas.get(i).getAngle(), true, mPiePaint);
-            //開始寫字...
+            //開始寫字
+            drawText(canvas, datas.get(i));
         }
         //繪製空隙
         drawLines(canvas);
 
-        mPiePaint.setColor(Color.WHITE);
+        mPiePaint.setColor(blankColor);
         canvas.drawArc(rectF2, mStartAngle, 360f, true, mPiePaint);
         canvas.save();
+    }
+
+    private void drawText(Canvas canvas, Data data){
+        float originX = 0;//圓心Ｘ(以canvas坐標系為基準)
+        float originY = 0;//圓心Ｙ(以canvas坐標系為基準)
+        Path path = new Path();
+        float angle = data.getStartAngle()+data.getAngle()/2;
+        float[] point = getPoint(angle, originX, originY, r);
+        if(angle>90 && angle<270){
+            //如果是左半圓,讓字上下顛倒
+            path.moveTo(point[0], point[1]);
+            path.lineTo(originX, originY);
+        }else {
+            path.lineTo(point[0], point[1]);
+        }
+        autoFitTextSize(data.getText());
+        canvas.drawTextOnPath(data.getText(), path, 0, getTextDy(), mTextPaint);
+    }
+
+    private void autoFitTextSize(String text){
+        int currentTextSize = defaultTextSize;
+        float textWidth = mTextPaint.measureText(text);//取得粗略的文字寬度
+        while (textWidth > r*0.4){
+            currentTextSize--;
+            mTextPaint.setTextSize(currentTextSize);
+            textWidth = mTextPaint.measureText(text);
+        }
+    }
+
+    //讓字根據baseLine偏移到垂直置中
+    private float getTextDy(){
+        Paint.FontMetrics metrics = mTextPaint.getFontMetrics();
+        float textHalfH = (metrics.descent-metrics.ascent)/2;
+        float centerY = metrics.descent - textHalfH;
+        return centerY<0?-centerY:centerY;
     }
 
     private void drawLines(Canvas canvas){
         Paint mLinePaint = new Paint();
         mLinePaint.setAntiAlias(true);//抗鋸齒
         mLinePaint.setDither(true);//防抖動
-        mLinePaint.setColor(Color.WHITE);
+        mLinePaint.setColor(blankColor);
         mLinePaint.setStyle(Paint.Style.STROKE);
         mLinePaint.setStrokeWidth(7);
-        float originX = 0;//圓心Ｘ
-        float originY = 0;//圓心Ｙ
+        float originX = 0;//圓心Ｘ(以canvas坐標系為基準)
+        float originY = 0;//圓心Ｙ(以canvas坐標系為基準)
         Path path = new Path();
         for(int i=0;i<datas.size();i++){
             path.reset();
-            double radian = datas.get(i).getStartAngle() * Math.PI / 180;//角度轉弧度
-            float x = (float) (originX + r*Math.cos(radian));
-            float y = (float) (originY + r*Math.sin(radian));
-            path.lineTo(x, y);
+            float[] point = getPoint(datas.get(i).getStartAngle(), originX, originY, r);
+            path.lineTo(point[0], point[1]);
             canvas.drawPath(path, mLinePaint);
         }
+    }
+
+    //已知角度 Ａ點 距離 ,求Ｂ點
+    private float[] getPoint(float angle, float originX, float originY, float bevel){
+        double radian = angle * Math.PI / 180;//角度轉弧度
+        float[] point = new float[2];
+        point[0] = (float) (originX + bevel*Math.cos(radian));
+        point[1] = (float) (originY + bevel*Math.sin(radian));
+        return point;
     }
 
     private boolean shouldCheck = true;
@@ -198,7 +224,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
                 y = event.getY();
                 if(shouldCheck){
                     for(Data data : datas){
-                        if(checkPointInSector(data, x, y) && !checkPointInCenter(x, y)){
+                        if(isClickInSector(data, x, y) && !isClickInCenter(x, y)){
                             data.setSelected(!data.isSelected());
                             invalidate();
                             onSectorClickListener.onSectorClicked(data);
@@ -212,16 +238,15 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         return true;
     }
 
-    //是否點擊中心點附近(中間白色圓)
-    private boolean checkPointInCenter(float x, float y){
+    //是否點擊中心點附近(中間小圓)
+    private boolean isClickInCenter(float x, float y){
         float originX = mWidth/2;//圓心Ｘ
         float originY = mHeight/2;//圓心Ｙ
-        float r2 = (float) (r * 0.05);
         return checkPointInCircle(r2, originX, originY, x, y);
     }
 
     //是否點擊在扇形內
-    private boolean checkPointInSector(Data data, float x, float y){
+    private boolean isClickInSector(Data data, float x, float y){
         boolean isInSector = false;
         float originX = mWidth/2;//圓心Ｘ
         float originY = mHeight/2;//圓心Ｙ
@@ -239,7 +264,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     }
 
     private boolean checkPointInCircle(float r, float x1, float y1, float x2, float y2){
-        return ((x2-x1)*(x2-x1)) + ((y2-y1)*(y2-y1)) < (r*r);
+        return ((x2-x1)*(x2-x1)) + ((y2-y1)*(y2-y1)) < (r*r);//求兩點直線距離的公式
     }
 
     private boolean checkPointAngleInSector(float startAngle, float endAngle, float x, float y){
@@ -256,7 +281,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     }
 
     private double toAngle(double x){
-        return 180*x/Math.PI;
+        return 180 * x / Math.PI;
     }
 
     public void notifyViewUpdate(boolean clearData){
@@ -273,16 +298,22 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         return mStartAngle;
     }
 
+    //TODO setStartAngle()有問題要修改
     public void setStartAngle(float startAngle){
-        this.mStartAngle = startAngle;
-        float angle = 360 / datas.size();
-        float blankAngle = (360 - (angle * datas.size())) / datas.size();
-        angle += blankAngle;
-        float currentStartAngle = mStartAngle;
-        for(int i=0;i<datas.size();i++){
-            datas.get(i).setStartAngle(currentStartAngle>=360?currentStartAngle-360:currentStartAngle);
-            currentStartAngle += angle;
-        }
+//        this.mStartAngle = startAngle;
+//        float angle = 360 / datas.size();
+//        float blankAngle = (360 - (angle * datas.size())) / datas.size();
+//        angle += blankAngle;
+//        float currentStartAngle = mStartAngle;
+//        for(int i=0;i<datas.size();i++){
+//            datas.get(i).setStartAngle(currentStartAngle>=360?currentStartAngle-360:currentStartAngle);
+//            currentStartAngle += angle;
+//        }
+//        notifyViewUpdate(false);
+    }
+
+    public void setBlankColor(int blankColor) {
+        this.blankColor = blankColor;
         notifyViewUpdate(false);
     }
 
