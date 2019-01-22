@@ -7,6 +7,9 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity implements ClickablePieView.OnSectorClickListener {
     ClickablePieView clickablePieView;
     PieView pieView;
@@ -50,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements ClickablePieView.
         clickablePieView.notifyViewUpdate();
     }
 
-    boolean reset = false;
+    private boolean reset = false;
     private String[] mTexts = new String[]{
             "Chocolaty",
             "Caramelized",
@@ -78,6 +81,31 @@ public class MainActivity extends AppCompatActivity implements ClickablePieView.
             reset = true;
         }
         clickablePieView.notifyViewUpdate();
+    }
+
+    private String[] mTexts2 = new String[]{
+            "10%",
+            "22.3%",
+            "3%",
+            "7.7%",
+            "57%"
+    };
+    private List<Float> percentages;
+    private void iniPercentages(){
+        if(percentages==null){
+            percentages = new ArrayList<>();
+        }
+        for(int i=0;i<mTexts2.length;i++){
+            percentages.add(Float.parseFloat(mTexts2[i].replace("%", "")));
+        }
+    }
+    public void setPercent(View view){
+        if(percentages==null || percentages.size()<0){
+            iniPercentages();
+        }
+        clickablePieView.setDatas(mTexts2, percentages);
+        clickablePieView.notifyViewUpdate();
+        reset = true;
     }
 
     @Override

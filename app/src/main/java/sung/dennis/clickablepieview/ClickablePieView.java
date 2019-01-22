@@ -7,13 +7,17 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClickablePieView extends View implements View.OnTouchListener {
+    private final String TAG = "ClickablePieView";
+    private Context context;
     private int blankColor = Color.WHITE;
     private int mTextcolor = Color.BLACK;
     private int mTextColorClicked = Color.WHITE;
@@ -44,8 +48,8 @@ public class ClickablePieView extends View implements View.OnTouchListener {
             "Spices",
             "Nutty"
     };
-
-    private List<Data> datas = new ArrayList<>();
+    private List<Float> percentages;
+    private List<Data> datas;
     private Paint mPiePaint, mTextPaint;
     private float mStartAngle = 0f;
     private int mWidth, mHeight;
@@ -72,6 +76,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     }
 
     private void ini(Context context){
+        this.context = context;
         mPiePaint = new Paint();
         mPiePaint.setAntiAlias(true);//抗鋸齒
         mPiePaint.setDither(true);//防抖動
@@ -86,11 +91,41 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     }
 
     private void iniData(){
+        if(datas == null){
+            datas = new ArrayList<>();
+        }
         float angle = 360 / mTexts.length;
         float blankAngle = (360 - (angle * mTexts.length)) / mTexts.length;
         angle += blankAngle;
         float currentStartAngle = mStartAngle;
         for(int i=0;i<mTexts.length;i++){
+            datas.add(new Data(mColors[i%mColors.length], mTexts[i], currentStartAngle, angle));
+            currentStartAngle += angle;
+        }
+    }
+
+    private void iniDataWithPercentage(){
+        if(datas == null){
+            datas = new ArrayList<>();
+        }
+        float sumPercentage = 0;
+        for(int k=0;k<percentages.size();k++){
+            sumPercentage += percentages.get(k);
+        }
+        if(sumPercentage>100){
+            for(int k=0;k<percentages.size();k++){
+                percentages.add(k, percentages.get(k)-(sumPercentage-100)/percentages.size());
+            }
+        }
+
+        float blankAngle = 0;
+        if(sumPercentage<100){
+            blankAngle = (360*(100-sumPercentage)/100) / percentages.size();
+        }
+        float angle;
+        float currentStartAngle = mStartAngle;
+        for(int i=0;i<percentages.size();i++){
+            angle = (360 * percentages.get(i)/100) + blankAngle;
             datas.add(new Data(mColors[i%mColors.length], mTexts[i], currentStartAngle, angle));
             currentStartAngle += angle;
         }
@@ -288,14 +323,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         return 180 * x / Math.PI;
     }
 
-    private boolean clearData = false;
     public void notifyViewUpdate(){
-        if(clearData){
-            if(datas.size()>0){
-                datas.clear();
-            }
-            iniData();
-        }
         invalidate();
     }
 
@@ -313,12 +341,10 @@ public class ClickablePieView extends View implements View.OnTouchListener {
             datas.get(i).setStartAngle(currentStartAngle>=360?currentStartAngle-360:currentStartAngle);
             currentStartAngle += angle;
         }
-        clearData = false;
     }
 
     public void setBlankColor(int blankColor) {
         this.blankColor = blankColor;
-        clearData = false;
     }
 
     public void setColors(int[] colors){
@@ -326,19 +352,32 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         for(int i=0;i<datas.size();i++){
             datas.get(i).setColor(colors[i%colors.length]);
         }
-        clearData = false;
     }
 
     public void setDatas(String[] texts){
         this.mTexts = texts;
+        datas.clear();
         iniData();
-        clearData = true;
+    }
+
+    public void setDatas(List<Data> datas){
+        this.datas = datas;
+    }
+
+    public void setDatas(String[] texts, List<Float> percentages){
+        if(texts.length != percentages.size()){
+            Log.e(TAG, "texts.length and percentages.size are different");
+            return;
+        }
+        this.mTexts = texts;
+        this.percentages = percentages;
+        datas.clear();
+        iniDataWithPercentage();
     }
 
     public void setTextcolor(int textColor, int textColorClicked){
         this.mTextcolor = textColor;
         this.mTextColorClicked = textColorClicked;
-        clearData = false;
     }
 
     public class Data {
