@@ -16,6 +16,18 @@
         android:gravity="center"
         android:orientation="vertical">
 
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="20dp"
+            android:text="Flavors" />
+
+        <sung.dennis.clickablepieview.ClickablePieView
+            android:id="@+id/clickablePieView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="40dp" />
     </LinearLayout>
 
     <LinearLayout

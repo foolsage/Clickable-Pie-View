@@ -19,11 +19,13 @@ public class MainActivity extends AppCompatActivity implements ClickablePieView.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        clickablePieView = new ClickablePieView(this);
+//        clickablePieView = new ClickablePieView(this);
+        clickablePieView = findViewById(R.id.clickablePieView);
         clickablePieView.setOnSectorClickListener(this);
-        pieView = new PieView(this);
         LinearLayout container = findViewById(R.id.container);
-        container.addView(clickablePieView);
+//        container.addView(clickablePieView);
+
+//        pieView = new PieView(this);
 //        container.addView(pieView);
     }
 
@@ -38,8 +40,6 @@ public class MainActivity extends AppCompatActivity implements ClickablePieView.
     private int[] mColors = new int[]{
             Color.RED,
             Color.BLUE,
-            Color.YELLOW,
-            Color.GREEN,
             Color.BLACK
     };
     public void setColors(View view){

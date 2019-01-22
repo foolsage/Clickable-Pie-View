@@ -216,7 +216,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         mLinePaint.setDither(true);//防抖動
         mLinePaint.setColor(blankColor);
         mLinePaint.setStyle(Paint.Style.STROKE);
-        mLinePaint.setStrokeWidth(7);
+        mLinePaint.setStrokeWidth(r2/7);
         float originX = 0;//圓心Ｘ(以canvas坐標系為基準)
         float originY = 0;//圓心Ｙ(以canvas坐標系為基準)
         Path path = new Path();
