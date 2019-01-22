@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements ClickablePieView.
         clickablePieView.setStartAngle(clickablePieView.getStartAngle()>=360?
                 clickablePieView.getStartAngle()%360 + 90:
                 clickablePieView.getStartAngle() + 90);
+        clickablePieView.notifyViewUpdate();
     }
 
     private int index = 0;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements ClickablePieView.
             clickablePieView.setColors(new int[]{mColors[index]});
             index++;
         }
+        clickablePieView.notifyViewUpdate();
     }
 
     boolean reset = false;
@@ -75,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements ClickablePieView.
             clickablePieView.setDatas(new String[]{"Hokaido", "Tokyo", "Fukuoka", "Kyoto", "Chiba", "Osaka", "Okinawa"});
             reset = true;
         }
+        clickablePieView.notifyViewUpdate();
     }
 
     @Override

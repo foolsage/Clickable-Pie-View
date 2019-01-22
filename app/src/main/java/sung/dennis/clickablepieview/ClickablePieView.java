@@ -269,7 +269,11 @@ public class ClickablePieView extends View implements View.OnTouchListener {
 
     private boolean checkPointAngleInSector(float startAngle, float endAngle, float x, float y){
         double pAngle = getAngle(x, y);
-        return startAngle<pAngle && endAngle>pAngle;
+        if(endAngle>=360){
+            return (startAngle<pAngle && 360>pAngle) || (0<pAngle && endAngle-360>pAngle);
+        }else {
+            return startAngle<pAngle && endAngle>pAngle;
+        }
     }
 
     private double getAngle(float x, float y){
@@ -284,7 +288,8 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         return 180 * x / Math.PI;
     }
 
-    public void notifyViewUpdate(boolean clearData){
+    private boolean clearData = false;
+    public void notifyViewUpdate(){
         if(clearData){
             if(datas.size()>0){
                 datas.clear();
@@ -298,23 +303,22 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         return mStartAngle;
     }
 
-    //TODO setStartAngle()有問題要修改
     public void setStartAngle(float startAngle){
-//        this.mStartAngle = startAngle;
-//        float angle = 360 / datas.size();
-//        float blankAngle = (360 - (angle * datas.size())) / datas.size();
-//        angle += blankAngle;
-//        float currentStartAngle = mStartAngle;
-//        for(int i=0;i<datas.size();i++){
-//            datas.get(i).setStartAngle(currentStartAngle>=360?currentStartAngle-360:currentStartAngle);
-//            currentStartAngle += angle;
-//        }
-//        notifyViewUpdate(false);
+        this.mStartAngle = startAngle;
+        float angle = 360 / datas.size();
+        float blankAngle = (360 - (angle * datas.size())) / datas.size();
+        angle += blankAngle;
+        float currentStartAngle = mStartAngle;
+        for(int i=0;i<datas.size();i++){
+            datas.get(i).setStartAngle(currentStartAngle>=360?currentStartAngle-360:currentStartAngle);
+            currentStartAngle += angle;
+        }
+        clearData = false;
     }
 
     public void setBlankColor(int blankColor) {
         this.blankColor = blankColor;
-        notifyViewUpdate(false);
+        clearData = false;
     }
 
     public void setColors(int[] colors){
@@ -322,19 +326,19 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         for(int i=0;i<datas.size();i++){
             datas.get(i).setColor(colors[i%colors.length]);
         }
-        notifyViewUpdate(false);
+        clearData = false;
     }
 
     public void setDatas(String[] texts){
         this.mTexts = texts;
         iniData();
-        notifyViewUpdate(true);
+        clearData = true;
     }
 
     public void setTextcolor(int textColor, int textColorClicked){
         this.mTextcolor = textColor;
         this.mTextColorClicked = textColorClicked;
-        notifyViewUpdate(false);
+        clearData = false;
     }
 
     public class Data {
