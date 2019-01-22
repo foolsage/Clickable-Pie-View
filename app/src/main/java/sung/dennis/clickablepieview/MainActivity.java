@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements ClickablePieView.
             Color.BLACK
     };
     public void setColors(View view){
-        if(index>=4){
+        if(index>=2){
             clickablePieView.setColors(mColors);
             index = 0;
         }else {

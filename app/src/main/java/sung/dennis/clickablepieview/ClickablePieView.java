@@ -87,13 +87,11 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         mTextPaint.setTextSize(defaultTextSize);
         mTextPaint.setStyle(Paint.Style.FILL);
         setOnTouchListener(this);
-        iniData();
+        datas = new ArrayList<>();
+//        iniData();
     }
 
     private void iniData(){
-        if(datas == null){
-            datas = new ArrayList<>();
-        }
         float angle = 360 / mTexts.length;
         float blankAngle = (360 - (angle * mTexts.length)) / mTexts.length;
         angle += blankAngle;
@@ -105,9 +103,6 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     }
 
     private void iniDataWithPercentage(){
-        if(datas == null){
-            datas = new ArrayList<>();
-        }
         float sumPercentage = 0;
         for(int k=0;k<percentages.size();k++){
             sumPercentage += percentages.get(k);
@@ -149,30 +144,32 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        canvas.translate(mWidth/2, mHeight/2);//原點移動到canvas的中心點
-        RectF rectF = new RectF();
-        RectF rectF2 = new RectF();
-        rectF.set(-r, -r, r, r);
-        rectF2.set(-r2, -r2, r2, r2);
-        for(int i=0;i<datas.size();i++){
-            if(datas.get(i).isSelected){
-                mPiePaint.setColor(datas.get(i).getColor());
-                mTextPaint.setColor(mTextColorClicked);
-            }else {
-                mPiePaint.setColor(Color.parseColor(mDefaultColor));
-                mTextPaint.setColor(mTextcolor);
+        if(datas!=null && datas.size()>0){
+            canvas.translate(mWidth/2, mHeight/2);//原點移動到canvas的中心點
+            RectF rectF = new RectF();
+            RectF rectF2 = new RectF();
+            rectF.set(-r, -r, r, r);
+            rectF2.set(-r2, -r2, r2, r2);
+            for(int i=0;i<datas.size();i++){
+                if(datas.get(i).isSelected){
+                    mPiePaint.setColor(datas.get(i).getColor());
+                    mTextPaint.setColor(mTextColorClicked);
+                }else {
+                    mPiePaint.setColor(Color.parseColor(mDefaultColor));
+                    mTextPaint.setColor(mTextcolor);
+                }
+                //繪製扇形
+                canvas.drawArc(rectF, datas.get(i).getStartAngle(), datas.get(i).getAngle(), true, mPiePaint);
+                //開始寫字
+                drawText(canvas, datas.get(i));
             }
-            //繪製扇形
-            canvas.drawArc(rectF, datas.get(i).getStartAngle(), datas.get(i).getAngle(), true, mPiePaint);
-            //開始寫字
-            drawText(canvas, datas.get(i));
-        }
-        //繪製空隙
-        drawLines(canvas);
+            //繪製空隙
+            drawLines(canvas);
 
-        mPiePaint.setColor(blankColor);
-        canvas.drawArc(rectF2, mStartAngle, 360f, true, mPiePaint);
-        canvas.save();
+            mPiePaint.setColor(blankColor);
+            canvas.drawArc(rectF2, mStartAngle, 360f, true, mPiePaint);
+            canvas.save();
+        }
     }
 
     private void drawText(Canvas canvas, Data data){
