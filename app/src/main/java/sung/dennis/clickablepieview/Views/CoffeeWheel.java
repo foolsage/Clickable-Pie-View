@@ -1,4 +1,4 @@
-package sung.dennis.clickablepieview;
+package sung.dennis.clickablepieview.Views;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -15,19 +15,19 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClickablePieView extends View implements View.OnTouchListener {
-    private final String TAG = "ClickablePieView";
+public class CoffeeWheel extends View implements View.OnTouchListener {
+    private final String TAG = "CoffeeWheel Error";
     private Context context;
     private int blankColor = Color.WHITE;
     private int mTextcolor = Color.BLACK;
     private int mTextColorClicked = Color.WHITE;
     private int defaultTextSize = 40;
-    private String mDefaultColor = "#FFE2E2E2";
+    private String mElementDefaultColor = "#FFE2E2E2";
 
-    private int[] mColors = new int[]{
-            Color.RED,
-            Color.BLUE,
-            Color.BLACK
+    private String[] mColors = new String[]{
+            "#ff0019",
+            "#000dff",
+            "#000000"
     };
 
     private String[] mTexts = new String[]{
@@ -49,28 +49,28 @@ public class ClickablePieView extends View implements View.OnTouchListener {
             "Nutty"
     };
     private List<Float> percentages;
-    private List<Data> datas;
+    private List<WheelItem> items;
     private Paint mPiePaint, mTextPaint;
     private float mStartAngle = 0f;
     private int mWidth, mHeight;
     private float r, r2;
-    private OnSectorClickListener onSectorClickListener;
+    private OnElementClickListener onElementClickListener;
 
-    public void setOnSectorClickListener(OnSectorClickListener onSectorClickListener) {
-        this.onSectorClickListener = onSectorClickListener;
+    public void setOnElementClickListener(OnElementClickListener onElementClickListener) {
+        this.onElementClickListener = onElementClickListener;
     }
 
-    public ClickablePieView(Context context) {
+    public CoffeeWheel(Context context) {
         super(context);
         ini(context);
     }
 
-    public ClickablePieView(Context context, AttributeSet attrs) {
+    public CoffeeWheel(Context context, AttributeSet attrs) {
         super(context, attrs);
         ini(context);
     }
 
-    public ClickablePieView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CoffeeWheel(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         ini(context);
     }
@@ -87,8 +87,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         mTextPaint.setTextSize(defaultTextSize);
         mTextPaint.setStyle(Paint.Style.FILL);
         setOnTouchListener(this);
-        datas = new ArrayList<>();
-//        iniData();
+        items = new ArrayList<>();
     }
 
     private void iniData(){
@@ -97,7 +96,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         angle += blankAngle;
         float currentStartAngle = mStartAngle;
         for(int i=0;i<mTexts.length;i++){
-            datas.add(new Data(mColors[i%mColors.length], mTexts[i], currentStartAngle, angle));
+            items.add(new WheelItem(Color.parseColor(mColors[i%mColors.length]), mTexts[i], currentStartAngle, angle));
             currentStartAngle += angle;
         }
     }
@@ -108,9 +107,11 @@ public class ClickablePieView extends View implements View.OnTouchListener {
             sumPercentage += percentages.get(k);
         }
         if(sumPercentage>100){
-            for(int k=0;k<percentages.size();k++){
-                percentages.add(k, percentages.get(k)-(sumPercentage-100)/percentages.size());
-            }
+            String err = "the sum of percentages is over 100.";
+            Toast.makeText(context, err, Toast.LENGTH_SHORT).show();
+            Log.e(TAG, err);
+            percentages = null;
+            return;
         }
 
         float blankAngle = 0;
@@ -121,7 +122,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         float currentStartAngle = mStartAngle;
         for(int i=0;i<percentages.size();i++){
             angle = (360 * percentages.get(i)/100) + blankAngle;
-            datas.add(new Data(mColors[i%mColors.length], mTexts[i], currentStartAngle, angle));
+            items.add(new WheelItem(Color.parseColor(mColors[i%mColors.length]), mTexts[i], currentStartAngle, angle));
             currentStartAngle += angle;
         }
     }
@@ -144,24 +145,24 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        if(datas!=null && datas.size()>0){
+        if(items !=null && items.size()>0){
             canvas.translate(mWidth/2, mHeight/2);//原點移動到canvas的中心點
             RectF rectF = new RectF();
             RectF rectF2 = new RectF();
             rectF.set(-r, -r, r, r);
             rectF2.set(-r2, -r2, r2, r2);
-            for(int i=0;i<datas.size();i++){
-                if(datas.get(i).isSelected){
-                    mPiePaint.setColor(datas.get(i).getColor());
+            for(int i = 0; i< items.size(); i++){
+                if(items.get(i).isSelected){
+                    mPiePaint.setColor(items.get(i).getColor());
                     mTextPaint.setColor(mTextColorClicked);
                 }else {
-                    mPiePaint.setColor(Color.parseColor(mDefaultColor));
+                    mPiePaint.setColor(Color.parseColor(mElementDefaultColor));
                     mTextPaint.setColor(mTextcolor);
                 }
                 //繪製扇形
-                canvas.drawArc(rectF, datas.get(i).getStartAngle(), datas.get(i).getAngle(), true, mPiePaint);
+                canvas.drawArc(rectF, items.get(i).getStartAngle(), items.get(i).getAngle(), true, mPiePaint);
                 //開始寫字
-                drawText(canvas, datas.get(i));
+                drawText(canvas, items.get(i));
             }
             //繪製空隙
             drawLines(canvas);
@@ -172,21 +173,23 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         }
     }
 
-    private void drawText(Canvas canvas, Data data){
+    private void drawText(Canvas canvas, WheelItem item){
         float originX = 0;//圓心Ｘ(以canvas坐標系為基準)
         float originY = 0;//圓心Ｙ(以canvas坐標系為基準)
         Path path = new Path();
-        float angle = data.getStartAngle()+data.getAngle()/2;
-        float[] point = getPoint(angle, originX, originY, r);
+        float angle = item.getStartAngle()+ item.getAngle()/2;
+        float[] pointEnd = getPoint(angle, originX, originY, r);
+        float[] pointStart = getPoint(angle, originX, originY, r2);//字要在中心圓到最外圍的中間,計算真正的path起點
         if(angle>90 && angle<270){
             //如果是左半圓,讓字上下顛倒
-            path.moveTo(point[0], point[1]);
-            path.lineTo(originX, originY);
+            path.moveTo(pointEnd[0], pointEnd[1]);
+            path.lineTo(pointStart[0], pointStart[1]);
         }else {
-            path.lineTo(point[0], point[1]);
+            path.moveTo(pointStart[0], pointStart[1]);
+            path.lineTo(pointEnd[0], pointEnd[1]);
         }
-        autoFitTextSize(data.getText());
-        canvas.drawTextOnPath(data.getText(), path, 0, getTextDy(), mTextPaint);
+        autoFitTextSize(item.getText());
+        canvas.drawTextOnPath(item.getText(), path, 0, getTextDy(), mTextPaint);
     }
 
     private void autoFitTextSize(String text){
@@ -217,9 +220,9 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         float originX = 0;//圓心Ｘ(以canvas坐標系為基準)
         float originY = 0;//圓心Ｙ(以canvas坐標系為基準)
         Path path = new Path();
-        for(int i=0;i<datas.size();i++){
+        for(int i = 0; i< items.size(); i++){
             path.reset();
-            float[] point = getPoint(datas.get(i).getStartAngle(), originX, originY, r);
+            float[] point = getPoint(items.get(i).getStartAngle(), originX, originY, r);
             path.lineTo(point[0], point[1]);
             canvas.drawPath(path, mLinePaint);
         }
@@ -255,11 +258,11 @@ public class ClickablePieView extends View implements View.OnTouchListener {
                 x = event.getX();
                 y = event.getY();
                 if(shouldCheck){
-                    for(Data data : datas){
-                        if(isClickInSector(data, x, y) && !isClickInCenter(x, y)){
-                            data.setSelected(!data.isSelected());
+                    for(WheelItem item : items){
+                        if(isClickInSector(item, x, y) && !isClickInCenter(x, y)){
+                            item.setSelected(!item.isSelected());
                             invalidate();
-                            onSectorClickListener.onSectorClicked(data);
+                            onElementClickListener.onElementClicked(item);
                             break;
                         }
                     }
@@ -278,12 +281,12 @@ public class ClickablePieView extends View implements View.OnTouchListener {
     }
 
     //是否點擊在扇形內
-    private boolean isClickInSector(Data data, float x, float y){
+    private boolean isClickInSector(WheelItem item, float x, float y){
         boolean isInSector = false;
         float originX = mWidth/2;//圓心Ｘ
         float originY = mHeight/2;//圓心Ｙ
-        float startAngle = data.getStartAngle();
-        float endAngle = startAngle + data.getAngle();
+        float startAngle = item.getStartAngle();
+        float endAngle = startAngle + item.getAngle();
         //以圓心為原點的座標
         float realX = x-originX;
         float realY = y-originY;
@@ -320,6 +323,8 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         return 180 * x / Math.PI;
     }
 
+    //-----------------------------------------------------------------------------------------
+
     public void notifyViewUpdate(){
         invalidate();
     }
@@ -330,61 +335,68 @@ public class ClickablePieView extends View implements View.OnTouchListener {
 
     public void setStartAngle(float startAngle){
         this.mStartAngle = startAngle;
-        float angle = 360 / datas.size();
-        float blankAngle = (360 - (angle * datas.size())) / datas.size();
+        float angle = 360 / items.size();
+        float blankAngle = (360 - (angle * items.size())) / items.size();
         angle += blankAngle;
         float currentStartAngle = mStartAngle;
-        for(int i=0;i<datas.size();i++){
-            datas.get(i).setStartAngle(currentStartAngle>=360?currentStartAngle-360:currentStartAngle);
+        for(int i = 0; i< items.size(); i++){
+            items.get(i).setStartAngle(currentStartAngle>=360?currentStartAngle-360:currentStartAngle);
             currentStartAngle += angle;
         }
+    }
+
+    public void setElementDefaultColor(String mElementDefaultColor) {
+        this.mElementDefaultColor = mElementDefaultColor;
     }
 
     public void setBlankColor(int blankColor) {
         this.blankColor = blankColor;
     }
 
-    public void setColors(int[] colors){
+    public void setColors(String[] colors){
         this.mColors = colors;
-        for(int i=0;i<datas.size();i++){
-            datas.get(i).setColor(colors[i%colors.length]);
+        for(int i = 0; i< items.size(); i++){
+            items.get(i).setColor(Color.parseColor(mColors[i%mColors.length]));
         }
     }
 
-    public void setDatas(String[] texts){
+    public void setElements(String[] texts){
         this.mTexts = texts;
-        datas.clear();
+        items.clear();
         iniData();
     }
 
-    public void setDatas(List<Data> datas){
-        this.datas = datas;
+    public void setElements(List<WheelItem> items){
+        this.items = items;
     }
 
-    public void setDatas(String[] texts, List<Float> percentages){
+    public void setElements(String[] texts, List<Float> percentages){
         if(texts.length != percentages.size()){
-            Log.e(TAG, "texts.length and percentages.size are different");
+            Log.e(TAG, "texts length and percentages size are different.");
             return;
         }
         this.mTexts = texts;
         this.percentages = percentages;
-        datas.clear();
+        items.clear();
         iniDataWithPercentage();
     }
 
-    public void setTextcolor(int textColor, int textColorClicked){
+    public void setTextcolor(int textColor){
         this.mTextcolor = textColor;
+    }
+
+    public void setClickedTextColor(int textColorClicked){
         this.mTextColorClicked = textColorClicked;
     }
 
-    public class Data {
+    public class WheelItem {
         private int color;
         private String text;
         private boolean isSelected = false;
         private float startAngle;
         private float angle;
 
-        Data(int color, String text, float startAngle, float angle){
+        WheelItem(int color, String text, float startAngle, float angle){
             this.color = color;
             this.text = text;
             this.startAngle = startAngle;
@@ -432,7 +444,7 @@ public class ClickablePieView extends View implements View.OnTouchListener {
         }
     }
 
-    public interface OnSectorClickListener{
-        void onSectorClicked(Object o);
+    public interface OnElementClickListener {
+        void onElementClicked(Object o);
     }
 }

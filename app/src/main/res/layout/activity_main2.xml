@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context=".Main2Activity">
 
     <LinearLayout
         android:id="@+id/container"
@@ -23,11 +23,11 @@
             android:layout_margin="20dp"
             android:text="Flavors" />
 
-        <sung.dennis.clickablepieview.Views.CoffeeWheel
-            android:id="@+id/coffeeWheel"
+        <sung.dennis.clickablepieview.Views.CoffeeWheelV2
+            android:id="@+id/coffeeWheelV2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_margin="40dp" />
+            android:layout_margin="10dp" />
     </LinearLayout>
 
     <LinearLayout
@@ -81,13 +81,6 @@
             android:layout_weight="1"
             android:onClick="rotate"
             android:text="Rotate" />
-
-        <Button
-            android:id="@+id/button6"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:onClick="goV2"
-            android:text="go v2" />
 
     </LinearLayout>
 

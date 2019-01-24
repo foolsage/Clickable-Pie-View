@@ -1,4 +1,4 @@
-package sung.dennis.clickablepieview;
+package sung.dennis.clickablepieview.Views;
 
 import android.content.Context;
 import android.graphics.Color;

@@ -2,7 +2,6 @@ package sung.dennis.clickablepieview;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
-import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -12,18 +11,18 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-import sung.dennis.clickablepieview.Views.CoffeeWheel;
+import sung.dennis.clickablepieview.Views.CoffeeWheelV2;
 
-public class MainActivity extends AppCompatActivity implements CoffeeWheel.OnElementClickListener {
-    CoffeeWheel coffeeWheel;
+public class Main2Activity extends AppCompatActivity implements CoffeeWheelV2.OnElementClickListener {
+    CoffeeWheelV2 coffeeWheel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main2);
 
 //        clickablePieView = new ClickablePieView(this);
-        coffeeWheel = findViewById(R.id.coffeeWheel);
+        coffeeWheel = findViewById(R.id.coffeeWheelV2);
         coffeeWheel.setOnElementClickListener(this);
         LinearLayout container = findViewById(R.id.container);
 //        container.addView(coffeeWheel);
@@ -144,15 +143,11 @@ public class MainActivity extends AppCompatActivity implements CoffeeWheel.OnEle
 
     @Override
     public void onElementClicked(Object o) {
-        CoffeeWheel.WheelItem item = (CoffeeWheel.WheelItem) o;
+        CoffeeWheelV2.WheelItem item = (CoffeeWheelV2.WheelItem) o;
         if(item.isSelected()){
             Toast.makeText(this, "你選了：" + item.getText(), Toast.LENGTH_SHORT).show();
         }else {
             Toast.makeText(this, "你取消選了：" + item.getText(), Toast.LENGTH_SHORT).show();
         }
-    }
-
-    public void goV2(View view){
-        startActivity(new Intent(this, Main2Activity.class));
     }
 }
