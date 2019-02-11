@@ -25,9 +25,22 @@ public class CoffeeWheel extends View implements View.OnTouchListener {
     private String mElementDefaultColor = "#FFE2E2E2";
 
     private String[] mColors = new String[]{
-            "#ff0019",
-            "#000dff",
-            "#000000"
+            "#623E1A",
+            "#BFA14C",
+            "#AE5C70",
+            "#661D46",
+            "#EEB13D",
+            "#E69635",
+            "#BBBF7B",
+            "#487BA1",
+            "#F7CD46",
+            "#6E7657",
+            "#DFBD71",
+            "#AD9C3B",
+            "#5A6366",
+            "#9F4949",
+            "#526C88",
+            "#AA7A3B"
     };
 
     private String[] mTexts = new String[]{

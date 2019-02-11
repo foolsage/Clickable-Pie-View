@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -38,9 +40,22 @@ public class MainActivity extends AppCompatActivity implements CoffeeWheel.OnEle
 
     private int index = 0;
     private String[] mColors = new String[]{
-            "#ff0019",
-            "#000dff",
-            "#000000"
+            "#623E1A",
+            "#BFA14C",
+            "#AE5C70",
+            "#661D46",
+            "#EEB13D",
+            "#E69635",
+            "#BBBF7B",
+            "#487BA1",
+            "#F7CD46",
+            "#6E7657",
+            "#DFBD71",
+            "#AD9C3B",
+            "#5A6366",
+            "#9F4949",
+            "#526C88",
+            "#AA7A3B"
     };
     public void setColors(View view){
         if(index>=2){

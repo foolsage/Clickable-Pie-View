@@ -6,11 +6,14 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Toast;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,36 +28,40 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
     private String mElementDefaultColor = "#FFE2E2E2";
 
     private String[] mColors = new String[]{
-            "#ff0019",
-            "#000dff",
-            "#000000"
+            "#623E1A",
+            "#BFA14C",
+            "#AE5C70",
+            "#661D46",
+            "#EEB13D",
+            "#E69635",
+            "#BBBF7B",
+            "#487BA1",
+            "#F7CD46",
+            "#6E7657",
+            "#DFBD71",
+            "#AD9C3B",
+            "#5A6366",
+            "#9F4949",
+            "#526C88",
+            "#AA7A3B"
     };
 
-    private String[] mTexts = new String[]{
-            "Chocolaty",
-            "Caramelized",
-            "Honey",
-            "Sweet",
-            "Floral",
-            "Fruity",
-            "Berry",
-            "Dried Fruit",
-            "Citrus Fruit",
-            "Winey",
-            "Fermented",
-            "Herb-Like",
-            "Smokey",
-            "Roasted",
-            "Spices",
-            "Nutty"
-    };
-    private List<Float> percentages;
-    private List<WheelItem> items;
-    private Paint mPiePaint, mTextPaint;
+    private String currentItemName = "";
+    private List<String> preLevelItemNames = new ArrayList<>();
+    private List<WheelItem> items, currentShowingItems;
+    private List<List<WheelItem>> preLevelItemsLists = new ArrayList<>();
+    private Paint mPiePaint, mTextPaint, mCenterTextPaint;
     private float mStartAngle = 0f;
     private int mWidth, mHeight;
     private float r, r2;
     private OnElementClickListener onElementClickListener;
+
+    private String json_items = "[" +
+            "{\"text\":\"Bitter\",\"children\":[{\"text\":\"Pungent\",\"children\":[{\"text\":\"Creosol\",\"children\":[]},{\"text\":\"Phenolic\",\"children\":[]}]},{\"text\":\"Harsh\",\"children\":[{\"text\":\"Caustic\",\"children\":[]},{\"text\":\"Alkaline\",\"children\":[]}]}]}" +
+            ",{\"text\":\"Salt\",\"children\":[{\"text\":\"Sharp\",\"children\":[{\"text\":\"Astringent\",\"children\":[]},{\"text\":\"Rough\",\"children\":[]}]},{\"text\":\"Bland\",\"children\":[{\"text\":\"Neutral\",\"children\":[]},{\"text\":\"Soft\",\"children\":[]}]}]}" +
+            ",{\"text\":\"Sweet\",\"children\":[{\"text\":\"Mellow\",\"children\":[{\"text\":\"Delicate\",\"children\":[]},{\"text\":\"Mild\",\"children\":[]}]},{\"text\":\"Adicic\",\"children\":[{\"text\":\"Nippy\",\"children\":[]},{\"text\":\"Piquant\",\"children\":[]}]}]}" +
+            ",{\"text\":\"Sour\",\"children\":[{\"text\":\"Winey\",\"children\":[{\"text\":\"Tangy\",\"children\":[]},{\"text\":\"Tart\",\"children\":[]}]},{\"text\":\"Sour\",\"children\":[{\"text\":\"Hard\",\"children\":[]},{\"text\":\"Acrid\",\"children\":[]}]}]}" +
+            "]";
 
     public void setOnElementClickListener(OnElementClickListener onElementClickListener) {
         this.onElementClickListener = onElementClickListener;
@@ -86,45 +93,68 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
         mTextPaint.setTextAlign(Paint.Align.CENTER);
         mTextPaint.setTextSize(defaultTextSize);
         mTextPaint.setStyle(Paint.Style.FILL);
+        mCenterTextPaint = new Paint();
+        mCenterTextPaint.setAntiAlias(true);//抗鋸齒
+        mCenterTextPaint.setDither(true);//防抖動
+        mCenterTextPaint.setTextAlign(Paint.Align.CENTER);
+        mCenterTextPaint.setTextSize(defaultTextSize);
+        mCenterTextPaint.setStyle(Paint.Style.FILL);
+        mCenterTextPaint.setColor(Color.BLACK);
         setOnTouchListener(this);
         items = new ArrayList<>();
+        iniData();
+        Log.e(TAG, "");
     }
 
     private void iniData(){
-        float angle = 360 / mTexts.length;
-        float blankAngle = (360 - (angle * mTexts.length)) / mTexts.length;
-        angle += blankAngle;
-        float currentStartAngle = mStartAngle;
-        for(int i=0;i<mTexts.length;i++){
-            items.add(new WheelItem(Color.parseColor(mColors[i%mColors.length]), mTexts[i], currentStartAngle, angle));
-            currentStartAngle += angle;
+        if(items.size()<=0){
+            try {
+                JSONArray jsonArray = new JSONArray(json_items);
+                iniDataFromJson(items, jsonArray);
+                currentShowingItems = items;
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private void iniDataWithPercentage(){
-        float sumPercentage = 0;
-        for(int k=0;k<percentages.size();k++){
-            sumPercentage += percentages.get(k);
-        }
-        if(sumPercentage>100){
-            String err = "the sum of percentages is over 100.";
-            Toast.makeText(context, err, Toast.LENGTH_SHORT).show();
-            Log.e(TAG, err);
-            percentages = null;
-            return;
-        }
+    private void iniDataFromJson(List<WheelItem> wheelItems, JSONArray jsonArray){
+        if(jsonArray.length()>0){
+            try {
+                float angle = 360 / jsonArray.length();
+                float blankAngle = (360 - (angle * jsonArray.length())) / jsonArray.length();
+                angle += blankAngle;
+                float currentStartAngle = mStartAngle;
 
-        float blankAngle = 0;
-        if(sumPercentage<100){
-            blankAngle = (360*(100-sumPercentage)/100) / percentages.size();
+                for(int i=0;i<jsonArray.length();i++){
+                    List<WheelItem> wheelChildItems = new ArrayList<>();
+                    String text = jsonArray.getJSONObject(i).getString("text");
+                    JSONArray jsonArrayChildren = jsonArray.getJSONObject(i).getJSONArray("children");
+
+                    WheelItem item = new WheelItem(Color.parseColor(mColors[i%mColors.length]), text, currentStartAngle, angle);
+
+                    if(jsonArrayChildren.length()>0){
+                        iniDataFromJson(wheelChildItems, jsonArrayChildren);
+                    }
+
+                    item.setChildItems(wheelChildItems);
+
+                    wheelItems.add(item);
+                    currentStartAngle += angle;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
-        float angle;
-        float currentStartAngle = mStartAngle;
-        for(int i=0;i<percentages.size();i++){
-            angle = (360 * percentages.get(i)/100) + blankAngle;
-            items.add(new WheelItem(Color.parseColor(mColors[i%mColors.length]), mTexts[i], currentStartAngle, angle));
-            currentStartAngle += angle;
-        }
+    }
+
+    private void resetDatas(){
+        currentItemName = "";
+        preLevelItemNames.clear();
+        items.clear();
+        currentShowingItems.clear();
+        preLevelItemsLists.clear();
+        iniData();
     }
 
     @Override
@@ -145,66 +175,79 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        if(items !=null && items.size()>0){
+        if(currentShowingItems !=null && currentShowingItems.size()>0){
             canvas.translate(mWidth/2, mHeight/2);//原點移動到canvas的中心點
             RectF rectF = new RectF();
             RectF rectF2 = new RectF();
             rectF.set(-r, -r, r, r);
             rectF2.set(-r2, -r2, r2, r2);
-            for(int i = 0; i< items.size(); i++){
-                if(items.get(i).isSelected){
-                    mPiePaint.setColor(items.get(i).getColor());
+            for(int i = 0; i< currentShowingItems.size(); i++){
+                if(currentShowingItems.get(i).isSelected){
+                    mPiePaint.setColor(currentShowingItems.get(i).getColor());
                     mTextPaint.setColor(mTextColorClicked);
                 }else {
                     mPiePaint.setColor(Color.parseColor(mElementDefaultColor));
                     mTextPaint.setColor(mTextcolor);
                 }
+//                mPiePaint.setColor(currentShowingItems.get(i).getColor());
+//                mTextPaint.setColor(mTextColorClicked);
                 //繪製扇形
-                canvas.drawArc(rectF, items.get(i).getStartAngle(), items.get(i).getAngle(), true, mPiePaint);
+                canvas.drawArc(rectF, currentShowingItems.get(i).getStartAngle(), currentShowingItems.get(i).getAngle(), true, mPiePaint);
                 //開始寫字
-                drawText(canvas, items.get(i));
+                drawText(canvas, currentShowingItems.get(i));
             }
             //繪製空隙
             drawLines(canvas);
 
+            //繪製中心圓
             mPiePaint.setColor(blankColor);
             canvas.drawArc(rectF2, mStartAngle, 360f, true, mPiePaint);
+            //繪製中心圓的字
+            if(!TextUtils.isEmpty(currentItemName)){
+                drawCenterText(canvas);
+            }
             canvas.save();
         }
     }
 
-    private void drawText(Canvas canvas, WheelItem item){
-        float originX = 0;//圓心Ｘ(以canvas坐標系為基準)
-        float originY = 0;//圓心Ｙ(以canvas坐標系為基準)
+    private void drawCenterText(Canvas canvas){
         Path path = new Path();
-        float angle = item.getStartAngle()+ item.getAngle()/2;
-        float[] pointEnd = getPoint(angle, originX, originY, r);
-        float[] pointStart = getPoint(angle, originX, originY, r2);//字要在中心圓到最外圍的中間,計算真正的path起點
-        if(angle>90 && angle<270){
-            //如果是左半圓,讓字上下顛倒
-            path.moveTo(pointEnd[0], pointEnd[1]);
-            path.lineTo(pointStart[0], pointStart[1]);
-        }else {
-            path.moveTo(pointStart[0], pointStart[1]);
-            path.lineTo(pointEnd[0], pointEnd[1]);
-        }
-        autoFitTextSize(item.getText());
-        canvas.drawTextOnPath(item.getText(), path, 0, getTextDy(), mTextPaint);
+        float pointStart[] = new float[]{-r2, 0};
+        float pointEnd[] = new float[]{r2, 0};
+        path.moveTo(pointStart[0], pointStart[1]);
+        path.lineTo(pointEnd[0], pointEnd[1]);
+        autoFitTextSize(currentItemName, mCenterTextPaint);
+        canvas.drawTextOnPath(currentItemName, path, 0, getTextDy(mCenterTextPaint), mCenterTextPaint);
     }
 
-    private void autoFitTextSize(String text){
+    private void drawText(Canvas canvas, WheelItem item){
+        Path path = new Path();
+        float r3 = r2 + (r-r2)/2;
+        RectF rectF = new RectF();
+        rectF.set(-r3, -r3, r3, r3);
+        if(item.getStartAngle()>=0 && item.getStartAngle()<180){
+            //如果是下半圓,讓字上下顛倒
+            path.addArc(rectF, item.getStartAngle()+item.getAngle(), -item.getAngle());
+        }else {
+            path.addArc(rectF, item.getStartAngle(), item.getAngle());
+        }
+        autoFitTextSize(item.getText(), mTextPaint);
+        canvas.drawTextOnPath(item.getText(), path, 0, getTextDy(mTextPaint), mTextPaint);
+    }
+
+    private void autoFitTextSize(String text, Paint paint){
         int currentTextSize = defaultTextSize;
-        float textWidth = mTextPaint.measureText(text);//取得粗略的文字寬度
+        float textWidth = paint.measureText(text);//取得粗略的文字寬度
         while (textWidth > r*0.4){
             currentTextSize--;
-            mTextPaint.setTextSize(currentTextSize);
-            textWidth = mTextPaint.measureText(text);
+            paint.setTextSize(currentTextSize);
+            textWidth = paint.measureText(text);
         }
     }
 
     //讓字根據baseLine偏移到垂直置中
-    private float getTextDy(){
-        Paint.FontMetrics metrics = mTextPaint.getFontMetrics();
+    private float getTextDy(Paint paint){
+        Paint.FontMetrics metrics = paint.getFontMetrics();
         float textHalfH = (metrics.descent-metrics.ascent)/2;
         float centerY = metrics.descent - textHalfH;
         return centerY<0?-centerY:centerY;
@@ -220,9 +263,9 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
         float originX = 0;//圓心Ｘ(以canvas坐標系為基準)
         float originY = 0;//圓心Ｙ(以canvas坐標系為基準)
         Path path = new Path();
-        for(int i = 0; i< items.size(); i++){
+        for(int i = 0; i< currentShowingItems.size(); i++){
             path.reset();
-            float[] point = getPoint(items.get(i).getStartAngle(), originX, originY, r);
+            float[] point = getPoint(currentShowingItems.get(i).getStartAngle(), originX, originY, r);
             path.lineTo(point[0], point[1]);
             canvas.drawPath(path, mLinePaint);
         }
@@ -258,13 +301,30 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
                 x = event.getX();
                 y = event.getY();
                 if(shouldCheck){
-                    for(WheelItem item : items){
+                    for(WheelItem item : currentShowingItems){
                         if(isClickInSector(item, x, y) && !isClickInCenter(x, y)){
-                            item.setSelected(!item.isSelected());
-                            invalidate();
+                            if(item.getChildItems() !=null && item.getChildItems().size()>0){
+                                preLevelItemsLists.add(currentShowingItems);
+                                preLevelItemNames.add(currentItemName);
+                                currentShowingItems = item.getChildItems();
+                                currentItemName = item.getText();
+                                invalidate();
+                            }else {
+                                //最內層的item, 可以被選擇了
+                                item.setSelected(!item.isSelected());
+                                invalidate();
+                            }
                             onElementClickListener.onElementClicked(item);
                             break;
                         }
+                    }
+                    if(isClickInCenter(x, y) && !TextUtils.isEmpty(currentItemName)){
+                        //點擊中心圓回到上一層
+                        currentShowingItems = preLevelItemsLists.get(preLevelItemsLists.size()-1);
+                        currentItemName = preLevelItemNames.get(preLevelItemNames.size()-1);
+                        preLevelItemsLists.remove(preLevelItemsLists.size()-1);
+                        preLevelItemNames.remove(preLevelItemNames.size()-1);
+                        invalidate();
                     }
                 }
                 shouldCheck = true;
@@ -326,23 +386,8 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
     //-----------------------------------------------------------------------------------------
 
     public void notifyViewUpdate(){
+        resetDatas();
         invalidate();
-    }
-
-    public float getStartAngle() {
-        return mStartAngle;
-    }
-
-    public void setStartAngle(float startAngle){
-        this.mStartAngle = startAngle;
-        float angle = 360 / items.size();
-        float blankAngle = (360 - (angle * items.size())) / items.size();
-        angle += blankAngle;
-        float currentStartAngle = mStartAngle;
-        for(int i = 0; i< items.size(); i++){
-            items.get(i).setStartAngle(currentStartAngle>=360?currentStartAngle-360:currentStartAngle);
-            currentStartAngle += angle;
-        }
     }
 
     public void setElementDefaultColor(String mElementDefaultColor) {
@@ -355,30 +400,6 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
 
     public void setColors(String[] colors){
         this.mColors = colors;
-        for(int i = 0; i< items.size(); i++){
-            items.get(i).setColor(Color.parseColor(mColors[i%mColors.length]));
-        }
-    }
-
-    public void setElements(String[] texts){
-        this.mTexts = texts;
-        items.clear();
-        iniData();
-    }
-
-    public void setElements(List<WheelItem> items){
-        this.items = items;
-    }
-
-    public void setElements(String[] texts, List<Float> percentages){
-        if(texts.length != percentages.size()){
-            Log.e(TAG, "texts length and percentages size are different.");
-            return;
-        }
-        this.mTexts = texts;
-        this.percentages = percentages;
-        items.clear();
-        iniDataWithPercentage();
     }
 
     public void setTextcolor(int textColor){
@@ -389,15 +410,33 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
         this.mTextColorClicked = textColorClicked;
     }
 
-    public class WheelItem {
+    public List<WheelItem> getSelectedFlavors(){
+        List<WheelItem> selectedItems = new ArrayList<>();
+        checkAllItems(items, selectedItems);
+        return selectedItems;
+    }
+
+    private void checkAllItems(List<WheelItem> items, List<WheelItem> selectedItems){
+        for(WheelItem item:items){
+            if (item.getChildItems()!=null && item.getChildItems().size()>0){
+                checkAllItems(item.getChildItems(), selectedItems);
+            }else {
+                if (item.isSelected())
+                    selectedItems.add(item);
+            }
+        }
+    }
+
+    public static class WheelItem {
         private int color;
         private String text;
         private boolean isSelected = false;
         private float startAngle;
         private float angle;
+        private String parent;
         private List<WheelItem> childItems = new ArrayList<>();
 
-        WheelItem(int color, String text, float startAngle, float angle){
+        public WheelItem(int color, String text, float startAngle, float angle){
             this.color = color;
             this.text = text;
             this.startAngle = startAngle;
@@ -442,6 +481,14 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
 
         public void setAngle(float angle) {
             this.angle = angle;
+        }
+
+        public String getParent() {
+            return parent;
+        }
+
+        public void setParent(String parent) {
+            this.parent = parent;
         }
 
         public void setChildItems(List<WheelItem> childItems) {

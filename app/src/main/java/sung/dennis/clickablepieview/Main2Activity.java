@@ -2,10 +2,12 @@ package sung.dennis.clickablepieview;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -14,7 +16,9 @@ import java.util.List;
 import sung.dennis.clickablepieview.Views.CoffeeWheelV2;
 
 public class Main2Activity extends AppCompatActivity implements CoffeeWheelV2.OnElementClickListener {
-    CoffeeWheelV2 coffeeWheel;
+    private CoffeeWheelV2 coffeeWheel;
+    private TextView textView_flavors;
+    private final String DEFAULT = "choose flavors";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,17 +26,12 @@ public class Main2Activity extends AppCompatActivity implements CoffeeWheelV2.On
         setContentView(R.layout.activity_main2);
 
 //        clickablePieView = new ClickablePieView(this);
+        textView_flavors = findViewById(R.id.textView_flavors);
+        textView_flavors.setText(DEFAULT);
         coffeeWheel = findViewById(R.id.coffeeWheelV2);
         coffeeWheel.setOnElementClickListener(this);
         LinearLayout container = findViewById(R.id.container);
 //        container.addView(coffeeWheel);
-    }
-
-    public void setAngle(View view){
-        coffeeWheel.setStartAngle(coffeeWheel.getStartAngle()>=360?
-                coffeeWheel.getStartAngle()%360 + 90:
-                coffeeWheel.getStartAngle() + 90);
-        coffeeWheel.notifyViewUpdate();
     }
 
     private int index = 0;
@@ -50,61 +49,6 @@ public class Main2Activity extends AppCompatActivity implements CoffeeWheelV2.On
             index++;
         }
         coffeeWheel.notifyViewUpdate();
-    }
-
-    private boolean reset = false;
-    private String[] mTexts = new String[]{
-            "Chocolaty",
-            "Caramelized",
-            "Honey",
-            "Sweet",
-            "Floral",
-            "Fruity",
-            "Berry",
-            "Dried Fruit",
-            "Citrus Fruit",
-            "Winey",
-            "Fermented",
-            "Herb-Like",
-            "Smokey",
-            "Roasted",
-            "Spices",
-            "Nutty"
-    };
-    public void setDatas(View view){
-        if (reset){
-            coffeeWheel.setElements(mTexts);
-            reset = false;
-        }else {
-            coffeeWheel.setElements(new String[]{"Hokaido", "Tokyo", "Fukuoka", "Kyoto", "Chiba", "Osaka", "Okinawa"});
-            reset = true;
-        }
-        coffeeWheel.notifyViewUpdate();
-    }
-
-    private String[] mTexts2 = new String[]{
-            "10%",
-            "22.3%",
-            "3%",
-            "7.7%",
-            "57%"
-    };
-    private List<Float> percentages;
-    private void iniPercentages(){
-        if(percentages==null){
-            percentages = new ArrayList<>();
-        }
-        for(int i=0;i<mTexts2.length;i++){
-            percentages.add(Float.parseFloat(mTexts2[i].replace("%", "")));
-        }
-    }
-    public void setPercent(View view){
-        if(percentages==null || percentages.size()<0){
-            iniPercentages();
-        }
-        coffeeWheel.setElements(mTexts2, percentages);
-        coffeeWheel.notifyViewUpdate();
-        reset = true;
     }
 
     private boolean isStop = true;
@@ -144,10 +88,32 @@ public class Main2Activity extends AppCompatActivity implements CoffeeWheelV2.On
     @Override
     public void onElementClicked(Object o) {
         CoffeeWheelV2.WheelItem item = (CoffeeWheelV2.WheelItem) o;
-        if(item.isSelected()){
-            Toast.makeText(this, "你選了：" + item.getText(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "你點擊了：" + item.getText(), Toast.LENGTH_SHORT).show();
+
+        if(item.getChildItems()==null || item.getChildItems().size()<=0){
+            if(item.isSelected()){
+                Toast.makeText(this, "你選了：" + item.getText(), Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(this, "你取消選了：" + item.getText(), Toast.LENGTH_SHORT).show();
+            }
+            showSelectedFlavors();
+        }
+    }
+
+    private void showSelectedFlavors(){
+        List<CoffeeWheelV2.WheelItem> selectedFlavors = coffeeWheel.getSelectedFlavors();
+        if(selectedFlavors.size()>0){
+            textView_flavors.setText("");
+            for (int i=0;i<selectedFlavors.size();i++){
+                CoffeeWheelV2.WheelItem flavor = selectedFlavors.get(i);
+                if(i == selectedFlavors.size()-1){
+                    textView_flavors.setText(textView_flavors.getText() + flavor.getText());
+                }else {
+                    textView_flavors.setText(textView_flavors.getText() + flavor.getText() + " , ");
+                }
+            }
         }else {
-            Toast.makeText(this, "你取消選了：" + item.getText(), Toast.LENGTH_SHORT).show();
+            textView_flavors.setText(DEFAULT);
         }
     }
 }
