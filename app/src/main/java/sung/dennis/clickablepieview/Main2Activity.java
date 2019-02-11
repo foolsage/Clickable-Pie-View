@@ -41,8 +41,8 @@ public class Main2Activity extends AppCompatActivity implements CoffeeWheelV2.On
             "#000000"
     };
     public void setColors(View view){
-        if(index>=2){
-            coffeeWheel.setColors(mColors);
+        if(index>2){
+            coffeeWheel.setColors(defaultColors);
             index = 0;
         }else {
             coffeeWheel.setColors(new String[]{mColors[index]});
@@ -50,6 +50,24 @@ public class Main2Activity extends AppCompatActivity implements CoffeeWheelV2.On
         }
         coffeeWheel.notifyViewUpdate();
     }
+    private String[] defaultColors = new String[]{
+            "#623E1A",
+            "#BFA14C",
+            "#AE5C70",
+            "#661D46",
+            "#EEB13D",
+            "#E69635",
+            "#BBBF7B",
+            "#487BA1",
+            "#F7CD46",
+            "#6E7657",
+            "#DFBD71",
+            "#AD9C3B",
+            "#5A6366",
+            "#9F4949",
+            "#526C88",
+            "#AA7A3B"
+    };
 
     private boolean isStop = true;
     private float from = 0, end = 0;

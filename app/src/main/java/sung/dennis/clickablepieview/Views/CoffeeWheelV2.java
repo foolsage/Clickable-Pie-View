@@ -148,15 +148,6 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
         }
     }
 
-    private void resetDatas(){
-        currentItemName = "";
-        preLevelItemNames.clear();
-        items.clear();
-        currentShowingItems.clear();
-        preLevelItemsLists.clear();
-        iniData();
-    }
-
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -386,7 +377,6 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
     //-----------------------------------------------------------------------------------------
 
     public void notifyViewUpdate(){
-        resetDatas();
         invalidate();
     }
 
@@ -400,6 +390,18 @@ public class CoffeeWheelV2 extends View implements View.OnTouchListener{
 
     public void setColors(String[] colors){
         this.mColors = colors;
+        resetItemsColor(items);
+    }
+
+    private void resetItemsColor(List<WheelItem> items){
+        for(int i=0;i<items.size();i++){
+            WheelItem item = items.get(i);
+            if (item.getChildItems()!=null && item.getChildItems().size()>0){
+                resetItemsColor(item.getChildItems());
+            }else {
+                item.setColor(Color.parseColor(mColors[i%mColors.length]));
+            }
+        }
     }
 
     public void setTextcolor(int textColor){
